@@ -20,6 +20,8 @@ import signal
 import sys
 import os
 import subprocess
+import json
+import requests
 
 
 
@@ -58,6 +60,18 @@ def get_tun_ints():
 def configure_router(config_set):
   for cmd in config_set:
     subprocess.call(cmd, shell=True)
+
+def update_he_tunnelbroker():
+  # Get HE TunnelBroker credentials, etc. from secrets.json
+  with open('secrets.json', 'r') as secrets:
+    secrets = json.loads(secrets.read())
+    he_username = secrets['he_tunnelbroker']['username']
+    he_update_key = secrets['he_tunnelbroker']['update_key']
+    he_tunnel_id = secrets['he_tunnelbroker']['tunnel_id']
+  # Define HE TunnelBroker Update URI
+  he_tunnelbroker_uri = 'https://' + he_username + ':' + he_update_key + '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + get_wan_ip.wan_ip 
+  # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
+  requests.get(he_tunnelbroker_uri)
 
 
 
