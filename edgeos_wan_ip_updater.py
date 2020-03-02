@@ -11,7 +11,7 @@
 # Ubiquiti EdgeOS at the moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200302T190003Z
+# Last Updated: 20200302T192100Z
 
 
 
@@ -74,7 +74,14 @@ def update_he_tunnelbroker():
   requests.get(he_tunnelbroker_uri)
 
 def centurylink_6rd():
-  # do stuff
+  # Steps:
+  # 0. Initial setup of EdgeOS firewall rules, tunnel interface, LAN interface, etc. on router
+  # 1. Get v4 WAN IP from pppoe0
+  # 2. Calculate v6 RD prefix (/56)
+  # 3. Assign address to tunnel interface
+  # 4. Assign address to LAN interface
+  # 5. Define routes
+  # 6. Test connectivity / DONE!
 
 
 
