@@ -11,7 +11,7 @@
 # Ubiquiti EdgeOS at the moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200108T061640Z
+# Last Updated: 20200302T190003Z
 
 
 
@@ -72,6 +72,9 @@ def update_he_tunnelbroker():
   he_tunnelbroker_uri = 'https://' + he_username + ':' + he_update_key + '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + get_wan_ip.wan_ip 
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
   requests.get(he_tunnelbroker_uri)
+
+def centurylink_6rd():
+  # do stuff
 
 
 
