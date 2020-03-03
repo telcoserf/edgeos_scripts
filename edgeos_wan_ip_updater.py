@@ -80,6 +80,7 @@ def update_he_tunnelbroker():
 
 # CENTURYLINK FIBER 6RD CONFIG UPDATES
 def centurylink_6rd():
+  # Steps:
   # 0. Initial setup of EdgeOS firewall rules, tunnel interface, LAN interface, etc. on router
   # 1. Get v4 WAN IP from pppoe0 & calculate v6 RD prefix (/56) and other v6 addresses
   # 2. Assign addresses to tunnel & LAN interfaces
