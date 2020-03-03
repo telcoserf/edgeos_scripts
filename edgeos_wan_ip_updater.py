@@ -9,13 +9,12 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200303T204940Z
+# Last Updated: 20200303T211802Z
 
 
 # IMPORT LIBRARIES
 import json
 import os
-#import requests
 import signal
 import subprocess
 import sys
@@ -31,6 +30,12 @@ sys.tracebacklimit=0 # System error handling
 wrap_conf = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper '
 wrap_oper = '/opt/vyatta/bin/vyatta-op-cmd-wrapper '
 wrap_cli_api = 'cli-shell-api '
+
+
+# EDGEOS CONFIGURATION FUNCTION
+def configure_router(config_set):
+  for cmd in config_set:
+    subprocess.call(cmd, shell=True)
 
 
 # GET CURRENT WAN IP
@@ -55,12 +60,6 @@ def get_tun_ifaces():
   return tun_ifaces
 
 
-# EDGEOS CONFIGURATION FUNCTION
-def configure_router(config_set):
-  for cmd in config_set:
-    subprocess.call(cmd, shell=True)
-
-
 # UPDATE HURRICANE ELECTRIC TUNNELBROKER WITH CURRENT WAN IP
 def update_he_tunnelbroker():
   # Get HE TunnelBroker credentials, etc. from secrets.json
@@ -76,6 +75,8 @@ def update_he_tunnelbroker():
     '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip) 
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
   requests.get(he_tunnelbroker_uri)
+  # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+  # Python requests library is NOT installed in EdgeOS by default
 
 
 # CENTURYLINK FIBER 6RD CONFIG UPDATES
@@ -130,21 +131,25 @@ def main():
   wan_ip = get_wan_ip()
   # Get list of tunnel interfaces
   tun_ifaces = get_tun_ifaces()
-  # Iterate through tunnel interfaces and update local-ip to current WAN IP
-  for tun_iface in tun_ifaces:
-    # Configuration command set
-    config_set = [
-      wrap_conf + 'begin',
-      wrap_conf + 'set interfaces tunnel ' + tun_iface + ' local-ip ' + wan_ip,
-      wrap_conf + 'commit',
-      wrap_conf + 'save'
-    ]
-    # Run configure_router function with config_set
-    try:
-      configure_router(config_set)
-      print(tun_iface + ' updated with current WAN IP (' + wan_ip + ')')
-    except:
-      print('Unable to configure ' + tun_iface + ' with current WAN IP.')
+  # Generate IPv6 RD subnets
+  cl_6rd_dict = centurylink_6rd()
+  ## Iterate through tunnel interfaces and update local-ip to current WAN IP <-- NO LONGER
+  ## NECESSARY, as we are using '0.0.0.0' as the local-ip for each tun interface, which uses the
+  ## current IPv4 WAN IP automatically
+  #for tun_iface in tun_ifaces:
+  #  # Configuration command set
+  #  config_set = [
+  #    wrap_conf + 'begin',
+  #    wrap_conf + 'set interfaces tunnel ' + tun_iface + ' local-ip ' + wan_ip,
+  #    wrap_conf + 'commit',
+  #    wrap_conf + 'save'
+  #  ]
+  #  # Run configure_router function with config_set
+  #  try:
+  #    configure_router(config_set)
+  #    print(tun_iface + ' updated with current WAN IP (' + wan_ip + ')')
+  #  except:
+  #    print('Unable to configure ' + tun_iface + ' with current WAN IP.')
 
 
 # RUN MAIN FUNCTION
