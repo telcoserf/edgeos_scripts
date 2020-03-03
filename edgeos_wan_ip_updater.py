@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-
 ##### WAN IP UPDATER #####
 #
 # This script should be run automatically via cron and update tunnel config
@@ -11,18 +10,19 @@
 # Ubiquiti EdgeOS at the moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200302T192100Z
-
+# Last Updated: 20200303T033130Z
 
 
 # IMPORT LIBRARIES
-import signal
-import sys
-import os
-import subprocess
+import fcntl
 import json
-import requests
-
+import os
+#import requests
+import signal
+import socket
+import struct
+import subprocess
+import sys
 
 
 # Silently exit upon user interruption (e.g. ctrl-c)
@@ -31,12 +31,10 @@ signal.signal(signal.SIGINT, signal.SIG_DFL) # KeyboardInterrupt: Ctrl-C
 sys.tracebacklimit=0 # System error handling
 
 
-
 # Define Command Wrappers
 wrap_conf = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper '
 wrap_oper = '/opt/vyatta/bin/vyatta-op-cmd-wrapper '
 wrap_cli_api = 'cli-shell-api '
-
 
 
 # Functions for getting the current WAN IP, getting a list of tunnel
@@ -82,7 +80,52 @@ def centurylink_6rd():
   # 4. Assign address to LAN interface
   # 5. Define routes
   # 6. Test connectivity / DONE!
-
+  #
+  # Use socket, fcntl & struct libraries to obtain WAN IP
+  s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+  # Return IPv4 WAN IP address
+  ipv4addr = socket.inet_ntoa(
+    fcntl.ioctl(
+      s.fileno(),
+      0x8915, # SIOCGIFADDR
+      struct.pack('256s', 'pppoe0'[:15]) # Change from pppoe0 if using another interface
+    )[20:24]
+  )
+  # Split IPv4 address into octets
+  v4parts = ipv4addr.split('.')
+  # Define IPv6 address parts as a list and begin with '2602', as that will always be the first
+  # part of the resulting IPv6 address
+  v6parts = ['2602']
+  # Iterate through octets and convert to hexadecimal (without '0x' prefix)
+  for octet in v4parts:
+    v6parts.append('{0:x}'.format(int(octet)))
+  # Iterate through v6parts list, identifying the index (idx) and value (val)
+  for idx, val in enumerate(v6parts):
+    # Process indexes 2 and 3 only
+    if 1 < idx < 5:
+      # Pad with a prepending '0' if the length of the value is less than 2
+      if len(val) < 2:
+        v6parts[idx] = '0' + val
+  # Base IPv6 block to build other subnets from
+  myv6_prefix = v6parts[0] + ':' + v6parts[1] + ':' + v6parts[2] + v6parts[3] + ':' +  v6parts[4] + '00'
+  # Entire /56 prefix
+  myv6_block = myv6_prefix + '::' + '/56'
+  # Tunnel interface /128
+  myv6_wan_128 = myv6_prefix + '::1/128'
+  # 1st LAN /64
+  myv6_lan_64_1 = myv6_prefix[:-1] + '1::/64'
+  # 2nd LAN /64
+  myv6_lan_64_2 = myv6_prefix[:-1] + '2::/64'
+  # 3rd LAN /64
+  myv6_lan_64_3 = myv6_prefix[:-1] + '3::/64'
+  # Build a dictionary of the values to be returned when running this function
+  cl_6rd_dict = {
+    'v4addr': ipv4addr,
+    'v6tunnel': myv6_wan_128,
+    'v6lan': myv6_lan_64_1
+  }
+  # Return dict
+  return cl_6rd_dict
 
 
 # Main Function
@@ -108,11 +151,9 @@ def main():
       print('Unable to configure ' + tun_int + ' with current WAN IP.')
 
 
-
 # RUN MAIN FUNCTION
 if __name__ == "__main__":
   main()
-
 
 
 # eof
