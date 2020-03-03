@@ -34,8 +34,7 @@ wrap_oper = '/opt/vyatta/bin/vyatta-op-cmd-wrapper '
 wrap_cli_api = 'cli-shell-api '
 
 
-# Functions for getting the current WAN IP, getting a list of tunnel
-# interfaces, as well as adding/changing/updating configuration...
+# GET CURRENT WAN IP
 def get_wan_ip():
   # Using Linux CLI, get current info for pppoe0 interface
   ip_output = os.popen('ip -4 a show pppoe0').read().split('\n')
@@ -44,6 +43,8 @@ def get_wan_ip():
   # Return WAN IP
   return wan_ip
 
+
+# GET LIST OF TUNNEL INTERFACES
 def get_tun_ifaces():
   response = os.popen(wrap_oper + 'show interfaces').read()
   # Extract tunnel interfaces into a list
@@ -54,10 +55,14 @@ def get_tun_ifaces():
   # Return list of tunnel interfaces
   return tun_ifaces
 
+
+# EDGEOS CONFIGURATION FUNCTION
 def configure_router(config_set):
   for cmd in config_set:
     subprocess.call(cmd, shell=True)
 
+
+# UPDATE HURRICANE ELECTRIC TUNNELBROKER WITH CURRENT WAN IP
 def update_he_tunnelbroker():
   # Get HE TunnelBroker credentials, etc. from secrets.json
   with open('secrets.json', 'r') as secrets:
@@ -65,13 +70,15 @@ def update_he_tunnelbroker():
     he_username = secrets['he_tunnelbroker']['username']
     he_update_key = secrets['he_tunnelbroker']['update_key']
     he_tunnel_id = secrets['he_tunnelbroker']['tunnel_id']
-  # Get current WAN IP address
+  # Get current WAN IPv4 address
   wan_ip = get_wan_ip()
   # Define HE TunnelBroker Update URI
   he_tunnelbroker_uri = 'https://' + he_username + ':' + he_update_key + '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip 
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
   requests.get(he_tunnelbroker_uri)
 
+
+# CENTURYLINK FIBER 6RD CONFIG UPDATES
 def centurylink_6rd():
   # 0. Initial setup of EdgeOS firewall rules, tunnel interface, LAN interface, etc. on router
   # 1. Get v4 WAN IP from pppoe0 & calculate v6 RD prefix (/56) and other v6 addresses
@@ -101,27 +108,21 @@ def centurylink_6rd():
   myv6_prefix = myv6_base + '::' + '/56'
   # Tunnel interface /128
   myv6_wan_128 = myv6_base + '::1/128'
-  # 1st LAN /64
+  # Generate LAN /64s (doing 3x here, but only using the first one)
   myv6_lan_64_1 = myv6_base[:-1] + '1::/64'
-  # 2nd LAN /64
   myv6_lan_64_2 = myv6_base[:-1] + '2::/64'
-  # 3rd LAN /64
   myv6_lan_64_3 = myv6_base[:-1] + '3::/64'
-  # 4th LAN /64
-  myv6_lan_64_4 = myv6_base[:-1] + '4::/64'
-  # 5th LAN /64
-  myv6_lan_64_5 = myv6_base[:-1] + '5::/64'
   # Build a dictionary of the values to be returned when running this function
   cl_6rd_dict = {
     'v4wan': wan_ip,
     'v6rdtun': myv6_wan_128,
     'v6lan1': myv6_lan_64_1
   }
-  # Return dict
+  # Return dict of generated values
   return cl_6rd_dict
 
 
-# Main Function
+# MAIN FUNCTION
 def main():
   # Get current WAN IP address
   wan_ip = get_wan_ip()
