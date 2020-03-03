@@ -29,13 +29,25 @@ sys.tracebacklimit=0 # System error handling
 # Define Command Wrappers
 wrap_conf = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper '
 wrap_oper = '/opt/vyatta/bin/vyatta-op-cmd-wrapper '
-wrap_cli_api = 'cli-shell-api '
+wrap_cliapi = 'cli-shell-api '
 
 
 # EDGEOS CONFIGURATION FUNCTION
-def configure_router(config_set):
+def edgeos_conf(config_set):
   for cmd in config_set:
-    subprocess.call(cmd, shell=True)
+    subprocess.call(wrap_conf + cmd, shell=True)
+
+
+# EDGEOS OPERATIONAL ("SHOW") COMMANDS FUNCTION
+def edgeos_oper(command_set):
+  for cmd in command_set:
+    subprocess.call(wrap_oper + cmd, shell=True)
+
+
+# EDGEOS CLI SHELL API FUNCTION
+def edgeos_cli_api(cli_lines):
+  for line in cli_lines:
+    subprocess.call(wrap_cliapi + line, shell=True)
 
 
 # GET CURRENT WAN IP
@@ -139,14 +151,14 @@ def main():
   #for tun_iface in tun_ifaces:
   #  # Configuration command set
   #  config_set = [
-  #    wrap_conf + 'begin',
-  #    wrap_conf + 'set interfaces tunnel ' + tun_iface + ' local-ip ' + wan_ip,
-  #    wrap_conf + 'commit',
-  #    wrap_conf + 'save'
+  #    'begin',
+  #    'set interfaces tunnel ' + tun_iface + ' local-ip ' + wan_ip,
+  #    'commit',
+  #    'save'
   #  ]
-  #  # Run configure_router function with config_set
+  #  # Run edgeos_conf function with config_set
   #  try:
-  #    configure_router(config_set)
+  #    edgeos_conf(config_set)
   #    print(tun_iface + ' updated with current WAN IP (' + wan_ip + ')')
   #  except:
   #    print('Unable to configure ' + tun_iface + ' with current WAN IP.')
