@@ -9,7 +9,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200303T211802Z
+# Last Updated: 20200303T235132Z
 
 
 # IMPORT LIBRARIES
@@ -26,7 +26,15 @@ signal.signal(signal.SIGINT, signal.SIG_DFL) # KeyboardInterrupt: Ctrl-C
 sys.tracebacklimit=0 # System error handling
 
 
-# Define Command Wrappers
+# Define your interfaces -- if not using a subinterface for your LAN, just leave it blank (e.g. '')
+# ** NOT CURRENTLY BEING USED, but will be soon, as each user has different settings **
+wan_iface = 'pppoe0'
+lan_iface = 'eth1'
+lan_subiface = 'vif 11'
+
+
+# Define Command Wrappers, used to pass commands to EdgeOS in the correct mode and translating
+# based on each different context
 wrap_conf = '/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper '
 wrap_oper = '/opt/vyatta/bin/vyatta-op-cmd-wrapper '
 wrap_cliapi = 'cli-shell-api '
@@ -39,33 +47,33 @@ def edgeos_conf(config_set):
 
 
 # EDGEOS OPERATIONAL ("SHOW") COMMANDS FUNCTION
-def edgeos_oper(command_set):
-  for cmd in command_set:
-    subprocess.call(wrap_oper + cmd, shell=True)
+def edgeos_oper(command):
+  oper_output = os.popen(wrap_oper + command).read()
+  return oper_output
 
 
 # EDGEOS CLI SHELL API FUNCTION
-def edgeos_cli_api(cli_lines):
-  for line in cli_lines:
-    subprocess.call(wrap_cliapi + line, shell=True)
+def edgeos_cli_api(command):
+  subprocess.call(wrap_cliapi + command, shell=True)
 
 
 # GET CURRENT WAN IP
 def get_wan_ip():
-  # Using Linux CLI, get current info for pppoe0 interface
-  ip_output = os.popen('ip -4 a show pppoe0').read().split('\n')
-  # Extract just the IPv4 address
-  wan_ip = [item for item in ip_output if 'inet' in item][0].strip().split(' ')[1]
+  # Using EdgeOS CLI, get current info for pppoe0 interface and split on newlines
+  iface_output = edgeos_oper('show interfaces pppoe pppoe0').split('\n')
+  # Extract just the IPv4 address by stripping out whitespace at the beginning, splitting on spaces,
+  # and grabbing index 1 (1st item after 'iface' in normal 'show interface <type> <iface>' output)
+  wan_ip = [item for item in iface_output if 'inet' in item][0].strip().split(' ')[1]
   # Return WAN IP
   return wan_ip
 
 
 # GET LIST OF TUNNEL INTERFACES
 def get_tun_ifaces():
-  response = os.popen(wrap_oper + 'show interfaces').read()
+  tun_output = edgeos_oper('show interfaces tunnel').splitlines()
   # Extract tunnel interfaces into a list
   tun_ifaces = []
-  for line in response.splitlines():
+  for line in tun_output:
     if 'tun' in line:
       tun_ifaces.append(line.split()[0])
   # Return list of tunnel interfaces
@@ -87,8 +95,8 @@ def update_he_tunnelbroker():
     '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip) 
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
   requests.get(he_tunnelbroker_uri)
-  # ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
-  # Python requests library is NOT installed in EdgeOS by default
+  # ^ ^ ^ ^ ^
+  # Python requests library is NOT installed in EdgeOS by default -- need an alternative solution
 
 
 # CENTURYLINK FIBER 6RD CONFIG UPDATES
