@@ -89,8 +89,8 @@ def centurylink_6rd():
   wan_ip = get_wan_ip()
   # Split IPv4 address into octets
   v4parts = wan_ip.split('.')
-  # Define IPv6 address parts as a list and begin with '2602', as that will always be the first
-  # part of the resulting IPv6 address
+  # Define IPv6 address parts as a list and begin with '2602', as our resulting address will
+  # always begin with that
   v6parts = ['2602']
   # Iterate through octets and convert to hexadecimal (without '0x' prefix)
   for octet in v4parts:
