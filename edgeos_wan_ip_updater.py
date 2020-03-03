@@ -2,15 +2,14 @@
 
 ##### WAN IP UPDATER #####
 #
-# This script should be run automatically via cron and update tunnel config
-# with the current WAN IPv4 address, as our ISP changes the DHCP IP on
-# disconnect/reconnect.
+# This script should be run automatically via cron and update tunnel config with the current WAN
+# IPv4 address, as our ISP changes the DHCP IP on disconnect/reconnect.
 #
-# Currently, reluctantly, using Python 2, as that's the default Python on
-# Ubiquiti EdgeOS at the moment. Queue complaining and shaming on 2020-01-01!
+# Currently, reluctantly, using Python 2, as that's the default Python on Ubiquiti EdgeOS at the
+# moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200303T201026Z
+# Last Updated: 20200303T204940Z
 
 
 # IMPORT LIBRARIES
@@ -73,7 +72,8 @@ def update_he_tunnelbroker():
   # Get current WAN IPv4 address
   wan_ip = get_wan_ip()
   # Define HE TunnelBroker Update URI
-  he_tunnelbroker_uri = 'https://' + he_username + ':' + he_update_key + '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip 
+  he_tunnelbroker_uri = ('https://' + he_username + ':' + he_update_key +
+    '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip) 
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
   requests.get(he_tunnelbroker_uri)
 
@@ -88,22 +88,23 @@ def centurylink_6rd():
   # Get current WAN IPv4 address
   wan_ip = get_wan_ip()
   # Split IPv4 address into octets
-  v4parts = wan_ip.split('.')
-  # Define IPv6 address parts as a list and begin with '2602', as our resulting address will
+  octets = wan_ip.split('.')
+  # Define IPv6 address groups as a list and begin with '2602', as our resulting address will
   # always begin with that
-  v6parts = ['2602']
+  hextets = ['2602']
   # Iterate through octets and convert to hexadecimal (without '0x' prefix)
-  for octet in v4parts:
-    v6parts.append('{0:x}'.format(int(octet)))
-  # Iterate through v6parts list, identifying the index (idx) and value (val)
-  for idx, val in enumerate(v6parts):
+  for octet in octets:
+    hextets.append('{0:x}'.format(int(octet)))
+  # Iterate through hextets list, identifying the index (idx) and value (val)
+  for idx, val in enumerate(hextets):
     # Process indexes 2 and 3 only
     if 1 < idx < 5:
       # Pad with a prepending '0' if the length of the value is less than 2
       if len(val) < 2:
-        v6parts[idx] = '0' + val
+        hextets[idx] = '0' + val
   # Base IPv6 block to build other subnets from
-  myv6_base = v6parts[0] + ':' + v6parts[1] + ':' + v6parts[2] + v6parts[3] + ':' +  v6parts[4] + '00'
+  myv6_base = (hextets[0] + ':' + hextets[1] + ':' + hextets[2] + hextets[3] + ':' + hextets[4] +
+    '00')
   # Entire /56 prefix
   myv6_prefix = myv6_base + '::' + '/56'
   # Tunnel interface /128
