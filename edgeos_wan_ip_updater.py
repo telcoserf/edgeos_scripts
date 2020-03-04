@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T064359Z
+# Last Updated: 20200304T174300Z
 
 
 # IMPORT LIBRARIES
@@ -183,6 +183,7 @@ def main():
   # Get list of tunnel interfaces
   try:
     tun_ifaces = get_tun_ifaces()
+    print('Tunnel interfaces: ' + tun_ifaces)
   except:
     print('Unable to obtain list of tunnel interfaces -- quitting!')
     sys.exit()
@@ -190,6 +191,7 @@ def main():
   # Generate IPv6 RD subnets & update configuration
   try:
     cl_6rd_dict = centurylink_6rd()
+    print('6RD Subnets: ' + cl_6rd_dict)
   except:
     print('Unable to generate 6RD subnets -- quitting!')
     sys.exit()
@@ -200,6 +202,7 @@ def main():
     for line in conf_set_lines:
       if 'CL 6RD' in line:
         cl_6rd_holddown_delete = line.replace('set ', 'delete ')
+    print('6RD hold-down route to be removed: ' + cl_6rd_holddown_delete)
   except:
     print('Unable to find existing 6RD static hold-down route -- quitting!')
     sys.exit()
@@ -228,6 +231,8 @@ def main():
       'commit',
       'save'
     ]
+    print('Configuration changes: ')
+    print(config_set)
   except:
     print('Unable to generate 6RD configuration -- quitting!')
     sys.exit()
@@ -235,17 +240,17 @@ def main():
   # Configure router and commit/save/exit
   try:
     edgeos_conf(config_set)
-    print()
+    print('Configuration changes: DONE!')
   except:
-    print()
+    print('Unable to make configuration changes -- quitting!')
     sys.exit()
 
   # Update HE TunnelBroker with IPv4 WAN IP
   try:
     update_he_tunnelbroker()
-    print()
+    print('HE TunnelBroker: UPDATED!')
   except:
-    print()
+    print('Unable to send WAN IP to HE -- quitting!')
     sys.exit()
 
 
