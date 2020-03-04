@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 ##### WAN IP UPDATER #####
 #
@@ -9,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200303T235132Z
+# Last Updated: 20200304T054645Z
 
 
 # IMPORT LIBRARIES
@@ -18,6 +19,7 @@ import os
 import signal
 import subprocess
 import sys
+import urllib2
 
 
 # Silently exit upon user interruption (e.g. ctrl-c)
@@ -113,12 +115,11 @@ def update_he_tunnelbroker():
   # Get current WAN IPv4 address
   wan_ip = get_wan_ip()
   # Define HE TunnelBroker Update URI
-  he_tunnelbroker_uri = ('https://' + he_username + ':' + he_update_key +
-    '@ipv4.tunnelbroker.net/nic/update?hostname=' + he_tunnel_id + '&myip=' + wan_ip) 
+  he_tunnelbroker_uri = ('https://ipv4.tunnelbroker.net/nic/update?username=' + he_username +
+    '&password=' + he_update_key + '&hostname=' + he_tunnel_id + '&myip=' + wan_ip)
   # HTTP GET to HE TunnelBroker Update URI to trigger update with specified IP address
-  requests.get(he_tunnelbroker_uri)
-  # ^ ^ ^ ^ ^
-  # Python requests library is NOT installed in EdgeOS by default -- need an alternative solution
+  response = urllib2.urlopen(he_tunnelbroker_uri)
+  html = response.read()
 
 
 # CENTURYLINK FIBER 6RD CONFIG UPDATES
