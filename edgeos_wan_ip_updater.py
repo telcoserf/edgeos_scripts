@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T183311Z
+# Last Updated: 20200304T183849Z
 
 
 # IMPORT LIBRARIES
@@ -221,7 +221,7 @@ def main():
       'delete interfaces tunnel ' + my_tun_iface + ' address',
       'set interfaces tunnel ' + my_tun_iface + ' address ' + cl_6rd_dict['v6rdtun'],
       cl_6rd_holddown_delete,
-      'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole',
+      'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole description "Static Hold-down route for GO via HE"',
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address',
       'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address ' + cl_6rd_dict['v6lan1'],
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert',
