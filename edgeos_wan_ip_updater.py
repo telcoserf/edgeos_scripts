@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T182759Z
+# Last Updated: 20200304T183311Z
 
 
 # IMPORT LIBRARIES
@@ -219,7 +219,7 @@ def main():
     config_set = [
       'begin',
       'delete interfaces tunnel ' + my_tun_iface + ' address',
-      'set interfaces tunnel tun0 address ' + cl_6rd_dict['v6rdtun'],
+      'set interfaces tunnel ' + my_tun_iface + ' address ' + cl_6rd_dict['v6rdtun'],
       cl_6rd_holddown_delete,
       'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole',
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address',
