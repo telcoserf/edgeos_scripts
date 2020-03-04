@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T174300Z
+# Last Updated: 20200304T174721Z
 
 
 # IMPORT LIBRARIES
@@ -172,10 +172,13 @@ def centurylink_6rd():
 
 # MAIN FUNCTION
 def main():
+  # Blank line at beginning of output
+  print()
   # Get current WAN IP address
   try:
     wan_ip = get_wan_ip()
     print('WAN IPv4 address: ' + wan_ip)
+    print()
   except:
     print('Unable to obtain WAN IPv4 address -- quitting!')
     sys.exit()
@@ -183,7 +186,8 @@ def main():
   # Get list of tunnel interfaces
   try:
     tun_ifaces = get_tun_ifaces()
-    print('Tunnel interfaces: ' + tun_ifaces)
+    print('Tunnel interfaces: ' + str(tun_ifaces))
+    print()
   except:
     print('Unable to obtain list of tunnel interfaces -- quitting!')
     sys.exit()
@@ -191,7 +195,8 @@ def main():
   # Generate IPv6 RD subnets & update configuration
   try:
     cl_6rd_dict = centurylink_6rd()
-    print('6RD Subnets: ' + cl_6rd_dict)
+    print('6RD Subnets: ' + str(cl_6rd_dict))
+    print()
   except:
     print('Unable to generate 6RD subnets -- quitting!')
     sys.exit()
@@ -203,6 +208,7 @@ def main():
       if 'CL 6RD' in line:
         cl_6rd_holddown_delete = line.replace('set ', 'delete ')
     print('6RD hold-down route to be removed: ' + cl_6rd_holddown_delete)
+    print()
   except:
     print('Unable to find existing 6RD static hold-down route -- quitting!')
     sys.exit()
@@ -233,6 +239,7 @@ def main():
     ]
     print('Configuration changes: ')
     print(config_set)
+    print()
   except:
     print('Unable to generate 6RD configuration -- quitting!')
     sys.exit()
@@ -241,6 +248,7 @@ def main():
   try:
     edgeos_conf(config_set)
     print('Configuration changes: DONE!')
+    print()
   except:
     print('Unable to make configuration changes -- quitting!')
     sys.exit()
@@ -249,9 +257,14 @@ def main():
   try:
     update_he_tunnelbroker()
     print('HE TunnelBroker: UPDATED!')
+    print()
   except:
     print('Unable to send WAN IP to HE -- quitting!')
     sys.exit()
+
+  # Let user know we're done
+  print('Completed!')
+  print()
 
 
 # RUN MAIN FUNCTION
