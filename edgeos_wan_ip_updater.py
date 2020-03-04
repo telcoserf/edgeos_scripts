@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T182256Z
+# Last Updated: 20200304T182759Z
 
 
 # IMPORT LIBRARIES
@@ -163,6 +163,7 @@ def centurylink_6rd():
   # Build a dictionary of the values to be returned when running this function
   cl_6rd_dict = {
     'v4wan': wan_ip,
+    'v6prefix': myv6_prefix,
     'v6rdtun': myv6_wan_128,
     'v6lan1': myv6_lan_64_1
   }
@@ -220,7 +221,7 @@ def main():
       'delete interfaces tunnel ' + my_tun_iface + ' address',
       'set interfaces tunnel tun0 address ' + cl_6rd_dict['v6rdtun'],
       cl_6rd_holddown_delete,
-      'set protocols static route6 ' + myv6_prefix + ' blackhole',
+      'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole',
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address',
       'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address ' + cl_6rd_dict['v6lan1'],
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert',
