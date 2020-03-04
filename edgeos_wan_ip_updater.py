@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T174721Z
+# Last Updated: 20200304T182256Z
 
 
 # IMPORT LIBRARIES
@@ -29,31 +29,31 @@ sys.tracebacklimit=0 # System error handling
 
 
 # Define your interfaces
-wan_iface = 'pppoe0'
-lan_iface = 'eth1.11'
-tun_iface = 'tun2'
+my_wan_iface = 'pppoe0'
+my_lan_iface = 'eth1.11'
+my_tun_iface = 'tun2'
 
 # Determine WAN interface type
-if wan_iface:
+if my_wan_iface:
   try:
-    if 'pppoe' in wan_iface:
-      wan_iface_type = 'pppoe'
-    elif 'eth' in wan_iface:
-      wan_iface_type = 'ethernet'
-    elif 'tun' in wan_iface:
-      wan_iface_type = 'tunnel'
+    if 'pppoe' in my_wan_iface:
+      my_wan_iface_type = 'pppoe'
+    elif 'eth' in my_wan_iface:
+      my_wan_iface_type = 'ethernet'
+    elif 'tun' in my_wan_iface:
+      my_wan_iface_type = 'tunnel'
   except:
     print('Please specify a WAN interface (e.g. pppoe0, eth0, tun0, etc.) -- quitting!')
     sys.exit()
 
 # Determine if LAN interface has a subinterface/vif
-if lan_iface:
+if my_lan_iface:
   try:
-    if '.' in lan_iface:
-      lan_subiface = ' vif ' + lan_iface.split('.')[1]
-      lan_iface = lan_iface.split('.')[0]
+    if '.' in my_lan_iface:
+      my_lan_subiface = ' vif ' + my_lan_iface.split('.')[1]
+      my_lan_iface = my_lan_iface.split('.')[0]
     else:
-      lan_subiface = ''
+      my_lan_subiface = ''
   except:
     print('Please specify a LAN interface (e.g. eth1 or eth1.11, etc.) -- quitting!')
     sys.exit()
@@ -173,12 +173,12 @@ def centurylink_6rd():
 # MAIN FUNCTION
 def main():
   # Blank line at beginning of output
-  print()
+  print('')
   # Get current WAN IP address
   try:
     wan_ip = get_wan_ip()
     print('WAN IPv4 address: ' + wan_ip)
-    print()
+    print('')
   except:
     print('Unable to obtain WAN IPv4 address -- quitting!')
     sys.exit()
@@ -187,7 +187,7 @@ def main():
   try:
     tun_ifaces = get_tun_ifaces()
     print('Tunnel interfaces: ' + str(tun_ifaces))
-    print()
+    print('')
   except:
     print('Unable to obtain list of tunnel interfaces -- quitting!')
     sys.exit()
@@ -196,7 +196,7 @@ def main():
   try:
     cl_6rd_dict = centurylink_6rd()
     print('6RD Subnets: ' + str(cl_6rd_dict))
-    print()
+    print('')
   except:
     print('Unable to generate 6RD subnets -- quitting!')
     sys.exit()
@@ -208,7 +208,7 @@ def main():
       if 'CL 6RD' in line:
         cl_6rd_holddown_delete = line.replace('set ', 'delete ')
     print('6RD hold-down route to be removed: ' + cl_6rd_holddown_delete)
-    print()
+    print('')
   except:
     print('Unable to find existing 6RD static hold-down route -- quitting!')
     sys.exit()
@@ -217,29 +217,29 @@ def main():
   try:
     config_set = [
       'begin',
-      'delete interfaces tunnel ' + tun_iface + ' address',
-      'set interfaces tunnel tun0 address ' + myv6_wan_128,
+      'delete interfaces tunnel ' + my_tun_iface + ' address',
+      'set interfaces tunnel tun0 address ' + cl_6rd_dict['v6rdtun'],
       cl_6rd_holddown_delete,
       'set protocols static route6 ' + myv6_prefix + ' blackhole',
-      'delete interfaces ethernet ' + lan_iface + lan_subiface + ' address',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' address ' + myv6_lan_64_1,
-      'delete interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert cur-hop-limit 64',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert managed-flag false',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert max-interval 30',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert other-config-flag false',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' autonomous-flag true',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' on-link-flag true',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' valid-lifetime 600',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert reachable-time 0',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert retrans-timer 0',
-      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert send-advert true',
+      'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address ' + cl_6rd_dict['v6lan1'],
+      'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert cur-hop-limit 64',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert managed-flag false',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert max-interval 30',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert other-config-flag false',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert prefix ' + cl_6rd_dict['v6lan1'] + ' autonomous-flag true',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert prefix ' + cl_6rd_dict['v6lan1'] + ' on-link-flag true',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert prefix ' + cl_6rd_dict['v6lan1'] + ' valid-lifetime 600',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert reachable-time 0',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert retrans-timer 0',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert send-advert true',
       'commit',
       'save'
     ]
     print('Configuration changes: ')
     print(config_set)
-    print()
+    print('')
   except:
     print('Unable to generate 6RD configuration -- quitting!')
     sys.exit()
@@ -248,7 +248,7 @@ def main():
   try:
     edgeos_conf(config_set)
     print('Configuration changes: DONE!')
-    print()
+    print('')
   except:
     print('Unable to make configuration changes -- quitting!')
     sys.exit()
@@ -257,14 +257,14 @@ def main():
   try:
     update_he_tunnelbroker()
     print('HE TunnelBroker: UPDATED!')
-    print()
+    print('')
   except:
     print('Unable to send WAN IP to HE -- quitting!')
     sys.exit()
 
   # Let user know we're done
   print('Completed!')
-  print()
+  print('')
 
 
 # RUN MAIN FUNCTION
