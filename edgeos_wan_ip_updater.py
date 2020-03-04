@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T054645Z
+# Last Updated: 20200304T064359Z
 
 
 # IMPORT LIBRARIES
@@ -31,6 +31,7 @@ sys.tracebacklimit=0 # System error handling
 # Define your interfaces
 wan_iface = 'pppoe0'
 lan_iface = 'eth1.11'
+tun_iface = 'tun2'
 
 # Determine WAN interface type
 if wan_iface:
@@ -49,7 +50,8 @@ if wan_iface:
 if lan_iface:
   try:
     if '.' in lan_iface:
-      lan_subiface = 'vif ' + lan_iface.split('.')[1]
+      lan_subiface = ' vif ' + lan_iface.split('.')[1]
+      lan_iface = lan_iface.split('.')[0]
     else:
       lan_subiface = ''
   except:
@@ -171,28 +173,80 @@ def centurylink_6rd():
 # MAIN FUNCTION
 def main():
   # Get current WAN IP address
-  wan_ip = get_wan_ip()
+  try:
+    wan_ip = get_wan_ip()
+    print('WAN IPv4 address: ' + wan_ip)
+  except:
+    print('Unable to obtain WAN IPv4 address -- quitting!')
+    sys.exit()
+
   # Get list of tunnel interfaces
-  tun_ifaces = get_tun_ifaces()
-  # Generate IPv6 RD subnets
-  cl_6rd_dict = centurylink_6rd()
-  ## Iterate through tunnel interfaces and update local-ip to current WAN IP <-- NO LONGER
-  ## NECESSARY, as we are using '0.0.0.0' as the local-ip for each tun interface, which uses the
-  ## current IPv4 WAN IP automatically
-  #for tun_iface in tun_ifaces:
-  #  # Configuration command set
-  #  config_set = [
-  #    'begin',
-  #    'set interfaces tunnel ' + tun_iface + ' local-ip ' + wan_ip,
-  #    'commit',
-  #    'save'
-  #  ]
-  #  # Run edgeos_conf function with config_set
-  #  try:
-  #    edgeos_conf(config_set)
-  #    print(tun_iface + ' updated with current WAN IP (' + wan_ip + ')')
-  #  except:
-  #    print('Unable to configure ' + tun_iface + ' with current WAN IP.')
+  try:
+    tun_ifaces = get_tun_ifaces()
+  except:
+    print('Unable to obtain list of tunnel interfaces -- quitting!')
+    sys.exit()
+
+  # Generate IPv6 RD subnets & update configuration
+  try:
+    cl_6rd_dict = centurylink_6rd()
+  except:
+    print('Unable to generate 6RD subnets -- quitting!')
+    sys.exit()
+  
+  # Get configuration set commands and pull out lines we need to delete and replace
+  try:
+    conf_set_lines = edgeos_oper('show configuration commands').split('\n')
+    for line in conf_set_lines:
+      if 'CL 6RD' in line:
+        cl_6rd_holddown_delete = line.replace('set ', 'delete ')
+  except:
+    print('Unable to find existing 6RD static hold-down route -- quitting!')
+    sys.exit()
+  
+  # Define CL 6RD config lines to send to router
+  try:
+    config_set = [
+      'begin',
+      'delete interfaces tunnel ' + tun_iface + ' address',
+      'set interfaces tunnel tun0 address ' + myv6_wan_128,
+      cl_6rd_holddown_delete,
+      'set protocols static route6 ' + myv6_prefix + ' blackhole',
+      'delete interfaces ethernet ' + lan_iface + lan_subiface + ' address',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' address ' + myv6_lan_64_1,
+      'delete interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert cur-hop-limit 64',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert managed-flag false',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert max-interval 30',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert other-config-flag false',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' autonomous-flag true',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' on-link-flag true',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert prefix ' + myv6_lan_64_1 + ' valid-lifetime 600',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert reachable-time 0',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert retrans-timer 0',
+      'set interfaces ethernet ' + lan_iface + lan_subiface + ' ipv6 router-advert send-advert true',
+      'commit',
+      'save'
+    ]
+  except:
+    print('Unable to generate 6RD configuration -- quitting!')
+    sys.exit()
+  
+  # Configure router and commit/save/exit
+  try:
+    edgeos_conf(config_set)
+    print()
+  except:
+    print()
+    sys.exit()
+
+  # Update HE TunnelBroker with IPv4 WAN IP
+  try:
+    update_he_tunnelbroker()
+    print()
+  except:
+    print()
+    sys.exit()
 
 
 # RUN MAIN FUNCTION
