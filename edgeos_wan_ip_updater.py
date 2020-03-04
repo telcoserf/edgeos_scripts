@@ -26,11 +26,33 @@ signal.signal(signal.SIGINT, signal.SIG_DFL) # KeyboardInterrupt: Ctrl-C
 sys.tracebacklimit=0 # System error handling
 
 
-# Define your interfaces -- if not using a subinterface for your LAN, just leave it blank (e.g. '')
-# ** NOT CURRENTLY BEING USED, but will be soon, as each user has different settings **
+# Define your interfaces
 wan_iface = 'pppoe0'
-lan_iface = 'eth1'
-lan_subiface = 'vif 11'
+lan_iface = 'eth1.11'
+
+# Determine WAN interface type
+if wan_iface:
+  try:
+    if 'pppoe' in wan_iface:
+      wan_iface_type = 'pppoe'
+    elif 'eth' in wan_iface:
+      wan_iface_type = 'ethernet'
+    elif 'tun' in wan_iface:
+      wan_iface_type = 'tunnel'
+  except:
+    print('Please specify a WAN interface (e.g. pppoe0, eth0, tun0, etc.) -- quitting!')
+    sys.exit()
+
+# Determine if LAN interface has a subinterface/vif
+if lan_iface:
+  try:
+    if '.' in lan_iface:
+      lan_subiface = 'vif ' + lan_iface.split('.')[1]
+    else:
+      lan_subiface = ''
+  except:
+    print('Please specify a LAN interface (e.g. eth1 or eth1.11, etc.) -- quitting!')
+    sys.exit()
 
 
 # Define Command Wrappers, used to pass commands to EdgeOS in the correct mode and translating
