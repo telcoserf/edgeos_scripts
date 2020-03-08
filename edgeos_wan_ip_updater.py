@@ -10,7 +10,7 @@
 # moment. Queue complaining and shaming on 2020-01-01!
 #
 # Written by zmw, 201912
-# Last Updated: 20200304T183849Z
+# Last Updated: 20200308T061628Z
 
 
 # IMPORT LIBRARIES
@@ -32,6 +32,7 @@ sys.tracebacklimit=0 # System error handling
 my_wan_iface = 'pppoe0'
 my_lan_iface = 'eth1.11'
 my_tun_iface = 'tun2'
+my_lan_iface_v4_addr = '192.168.11.1/24
 
 # Determine WAN interface type
 if my_wan_iface:
@@ -221,8 +222,9 @@ def main():
       'delete interfaces tunnel ' + my_tun_iface + ' address',
       'set interfaces tunnel ' + my_tun_iface + ' address ' + cl_6rd_dict['v6rdtun'],
       cl_6rd_holddown_delete,
-      'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole description "Static Hold-down route for GO via HE"',
+      'set protocols static route6 ' + cl_6rd_dict['v6prefix'] + ' blackhole description "Static Hold-down route for CL 6RD"',
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address',
+      'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address ' + my_lan_iface_v4_addr,
       'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' address ' + cl_6rd_dict['v6lan1'],
       'delete interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert',
       'set interfaces ethernet ' + my_lan_iface + my_lan_subiface + ' ipv6 router-advert cur-hop-limit 64',
