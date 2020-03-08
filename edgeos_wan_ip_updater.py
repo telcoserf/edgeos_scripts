@@ -32,7 +32,7 @@ sys.tracebacklimit=0 # System error handling
 my_wan_iface = 'pppoe0'
 my_lan_iface = 'eth1.11'
 my_tun_iface = 'tun2'
-my_lan_iface_v4_addr = '192.168.11.1/24
+my_lan_iface_v4_addr = '192.168.11.1/24'
 
 # Determine WAN interface type
 if my_wan_iface:
